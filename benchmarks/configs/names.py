@@ -87,8 +87,7 @@ class UnsupervisedInferenceExperiments:
 
 @dataclass
 class MyExperiments:
-    # Add your experiment names here
-    pass
+    voltage_touch_test: dict
 
 
 current_module = sys.modules[__name__]

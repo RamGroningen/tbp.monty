@@ -429,6 +429,110 @@ class NoiseMixin:
                 new_feat_val[0] = np.clip(new_feat_val[0], 0, 1)
         return new_feat_val
 
+class PressureTouchSensorSM(DetailedLoggingSM):
+    def __init__(
+            self,
+            sensor_module_id,
+            features,
+            save_raw_obs=False,
+            pc1_is_pc2_threshold=10,
+            process_all_obs=False,
+            static_touch_sensor=False
+    ):
+        super(PressureTouchSensorSM, self).__init__(
+            sensor_module_id, save_raw_obs, pc1_is_pc2_threshold
+        )
+        possible_features = ["voltage", "voltage_history"]
+        for feature in features:
+            assert feature in possible_features, (
+                f"{feature} not part of {possible_features}"
+            )
+
+        self.static_touch_sensor = static_touch_sensor
+        self.voltage_history = []
+        self.max_history_length = 100
+        self.features = features
+
+    def pre_episode(self):
+        """Reset buffer and is_exploring flag."""
+        super().pre_episode()
+        self.voltage_history = []
+
+    def update_state(self, state):
+        """Update information about the sensors location and rotation."""
+        if self.static_touch_sensor:
+            return
+        
+        agent_position = state["position"]
+        sensor_position = state[self.sensor_module_id]["position"]
+        if "motor_only_step" in state.keys():
+            self.motor_only_step = state["motor_only_step"]
+        else:
+            self.motor_only_step = False
+
+        agent_rotation = state["rotation"]
+        sensor_rotation = state[self.sensor_module_id]["rotation"]
+        self.state = {
+            "location": agent_position + sensor_position,
+            "rotation": agent_rotation * sensor_rotation,
+        }
+
+    def state_dict(self):
+        """Return state_dict."""
+        assert len(self.sm_properties) == len(self.raw_observations), (
+            "Should have a SM value for every set of observations."
+        )
+
+        return dict(
+            raw_observations=self.raw_observations,
+            processed_observations=self.processed_obs,
+            sm_properties=self.sm_properties,
+            # sensor_states=self.states, # pickle problem with magnum
+        )
+    
+    def step(self, data):
+        """Turn raw observations into dict of features at location.
+
+        Args:
+            data: Raw observations.
+
+        Returns:
+            State with features and morphological features. Noise may be added.
+            use_state flag may be set.
+        """
+        super().step(data)  # for logging
+        features = {}
+        voltage = data.get("voltage", 0.0)
+        if "voltage" in self.features:
+            # Second arg is a default val 0.0 if voltage doesn't exist
+            features["voltage"] = voltage
+        if "voltage_history" in self.features:
+            self.voltage_history.append(
+                {
+                    "voltage": voltage,
+                    "timestamp": data.get("timestamp", 0.0)
+                }
+            )
+            if len(self.voltage_history) > self.max_history_length:
+                self.voltage_history = self.voltage_history[-self.max_history_length:]
+            features["voltage_history"] = np.array(self.voltage_history)
+
+        morphological_features = {
+            "pose_vectors" : np.eye(3),
+            "pose_fully_defined" : True
+        }
+        
+        observed_state = State(
+            location=data.get("location", np.zeros(3)),
+            morphological_features=morphological_features,
+            non_morphological_features=features,
+            confidence=1.0,
+            use_state=True,
+            sender_id=self.sensor_module_id,
+            sender_type="SM",
+        )
+
+        return observed_state
 
 class HabitatDistantPatchSM(DetailedLoggingSM, NoiseMixin):
     """Sensor Module that turns Habitat camera obs into features at locations.
