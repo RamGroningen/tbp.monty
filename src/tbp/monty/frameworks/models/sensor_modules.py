@@ -485,7 +485,6 @@ class PressureTouchSensorSM(DetailedLoggingSM):
 
         return dict(
             raw_observations=self.raw_observations,
-            processed_observations=self.processed_obs,
             sm_properties=self.sm_properties,
             # sensor_states=self.states, # pickle problem with magnum
         )
@@ -515,7 +514,6 @@ class PressureTouchSensorSM(DetailedLoggingSM):
             )
             if len(self.voltage_history) > self.max_history_length:
                 self.voltage_history = self.voltage_history[-self.max_history_length:]
-            features["voltage_history"] = np.array(self.voltage_history)
 
         morphological_features = {
             "pose_vectors" : np.eye(3),

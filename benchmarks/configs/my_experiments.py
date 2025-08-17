@@ -4,7 +4,7 @@ from dataclasses import asdict
 from benchmarks.configs.names import MyExperiments
 from tbp.monty.frameworks.config_utils.config_args import (
     MontyArgs,
-    MotorSystemConfigCurvatureInformedSurface,
+    MotorSystemConfig,
     PatchAndViewMontyConfig,
     PretrainLoggingConfig,
     get_cube_face_and_corner_views_rotations,
@@ -70,7 +70,7 @@ voltage_touch_test = dict(
                 learning_module_args=dict(),
             )
         ),
-        motor_system_config=MotorSystemConfigCurvatureInformedSurface(),
+        motor_system_config=MotorSystemConfig(),
         sm_to_agent_dict=dict(finger="agent_id_0"),
     ),
     dataset_class=ED.EnvironmentDataset,
