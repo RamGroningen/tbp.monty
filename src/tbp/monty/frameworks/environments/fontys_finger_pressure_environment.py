@@ -1,15 +1,15 @@
 import numpy as np
-import time
 from tbp.monty.frameworks.environments.embodied_environment import EmbodiedEnvironment, ActionSpace
 from tbp.monty.frameworks.actions.actions import Action
 
+'''Environment Classes'''
 class VoltageTouchActionSpace(tuple, ActionSpace):
     """Simple action space for voltage touch environment."""
     def sample(self):
         return self[0] if self else None
 
 class VoltageTouchEnvironment(EmbodiedEnvironment):
-    def __init__(self, data_path=None):
+    def __init__(self, dataset=None):
         super().__init__()
         self.current_time = 0.0
         self.sensor_location = np.array([0.0, 0.0, 0.1]) # fixed sensor location
@@ -18,6 +18,15 @@ class VoltageTouchEnvironment(EmbodiedEnvironment):
         self.touch_frequency = 2.0 # Hz of touch events
         # Just for compatibility with the dataloader system
         self._agents = [type("FakeAgent", (object,), {"action_space_type": "surface_agent"})()]
+        self.fabric_num = 0 # fabric to get data from
+
+        if isinstance(dataset, dict):
+            self.train_data = dataset['train_data'] if 'train_data' in dataset else None
+            self.train_targets = dataset['train_targets'] if 'train_targets' in dataset else None
+            self.test_data = dataset['test_data'] if 'test_data' in dataset else None
+            self.test_targets = dataset['test_targets'] if 'test_targets' in dataset else None
+
+        # TODO - if incorrect dataset type fails silently - can throw an error to help later
 
     @property
     def action_space(self):
@@ -29,14 +38,16 @@ class VoltageTouchEnvironment(EmbodiedEnvironment):
     def add_object(self, name, position=(0.0, 0.0, 0.0), rotation=(1.0, 0.0, 0.0, 0.0), 
                    scale=(1.0, 1.0, 1.0), semantic_id=None, enable_physics=False, 
                    object_to_avoid=False, primary_target_object=None):
-        """Add an object to the environment. Not implemented for this simple environment."""
-        # For a simple voltage touch environment, we don't need to add objects
-        # Return None to indicate no object was added
+        """Used to update environment with next object - used here to increment id of voltage data read"""
+        # TODO - perhaps make a new dataloader environment which is operating on multiple objects 
+        # per scene - currently not implemented in Monty but for now this wil do.
+        self.fabric_num += 1
+        
+        # Return None for now, but could return with more information as needed
         return None
 
     def remove_all_objects(self):
-        """Remove all objects from the environment. Not implemented for this simple environment."""
-        # For a simple voltage touch environment, there are no objects to remove
+        """Used to transition betwen one fabric to another"""
         pass
 
     def close(self):
@@ -46,16 +57,18 @@ class VoltageTouchEnvironment(EmbodiedEnvironment):
 
     def step(self, action: Action) -> dict:
         """Simulate one step of the environment, generating voltage data."""
-        self.current_time += 0.1 # 100ms time steps
+        self.current_time += 0.001 # 100ms time steps
         # Simulate voltage data based on time
         # This creates a relatistic pattern of touch events
-        voltage = self._generate_voltage_data()
+        idx = int(self.current_time / 0.001)
+        voltage = self._generate_voltage_data(idx)
 
         # Create observation with voltage data
         obs = {
             "agent_id_0": {
                 "finger": {
                     "voltage" : voltage,
+                    "fabric_id" : self.train_data[self.fabric_num],
                     "timestamp" : self.current_time,
                     "location" : self.sensor_location,
                 }
@@ -64,7 +77,10 @@ class VoltageTouchEnvironment(EmbodiedEnvironment):
 
         return obs
 
-    def _generate_voltage_data(self):
+    def _generate_voltage_data(self, idx):
+        out = self.train_data[self.fabric_num][idx]
+        return out.item()
+        
         """Generate voltage data"""
         # Add som enoise to baseline
         voltage = self.voltage_baseline + np.random.normal(0, 0.01)

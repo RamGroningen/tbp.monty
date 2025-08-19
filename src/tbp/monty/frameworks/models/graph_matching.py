@@ -1112,7 +1112,7 @@ class GraphMemory(LMMemory):
     """General GraphMemory that stores & manipulates GraphObjectModel instances.
 
     You can think of the GraphMemory as a library of object models with a librarian
-    managing them. The books ate GraphObjectModel instances. The LearningModule classes
+    managing them. The books are GraphObjectModel instances. The LearningModule classes
     access the information stored in the books and can request books to be added to the
     library.
 
