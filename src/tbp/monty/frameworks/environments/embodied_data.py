@@ -291,6 +291,7 @@ class EnvironmentDataLoaderPerObject(EnvironmentDataLoader):
 
     def pre_epoch(self):
         self.change_object_by_idx(0)
+        self.dataset.env.pre_epoch()
 
     def post_epoch(self):
         self.epochs += 1

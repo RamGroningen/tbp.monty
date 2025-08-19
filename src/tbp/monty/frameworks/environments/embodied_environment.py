@@ -46,7 +46,7 @@ class EmbodiedEnvironment(abc.ABC):
         semantic_id: Optional[str] = None,
         enable_physics: Optional[bool] = False,
         object_to_avoid=False,
-        primary_target_object=None,
+        primary_target_object=None
     ):
         """Add an object to the environment.
 
@@ -65,6 +65,7 @@ class EmbodiedEnvironment(abc.ABC):
                 that it does not obscure the initial view of the primary target object
                 (which avoiding collision alone cannot guarantee). Used when adding
                 multiple objects. Defaults to None.
+            current_idx: The current object raw index
 
         Returns:
             The newly added object.
@@ -97,6 +98,11 @@ class EmbodiedEnvironment(abc.ABC):
               HabitatSim.remove_all_objects and is quite specific to HabitatSim
               implementation. We should consider refactoring this to be more generic.
         """
+        pass
+
+    @abc.abstractmethod
+    def pre_epoch(self):
+        """Hook into pre-epoch processing events."""
         pass
 
     @abc.abstractmethod

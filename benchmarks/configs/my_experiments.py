@@ -16,7 +16,6 @@ from tbp.monty.frameworks.config_utils.make_dataset_configs import (
 )
 from tbp.monty.simulators.habitat.configs.voltage_touch_dataset import (
     VoltageTouchDatasetArgs,
-    get_voltage_touch_dataloader_args,
 )
 from tbp.monty.frameworks.environments import embodied_data as ED
 from tbp.monty.frameworks.environments.fontys_finger_pressure_environment import VoltageTouchEnvironment
@@ -275,9 +274,15 @@ voltage_touch_test = dict(
         }},
     ),
     train_dataloader_class=ED.InformedEnvironmentDataLoader,
-    train_dataloader_args=get_voltage_touch_dataloader_args(),
+    train_dataloader_args=EnvironmentDataloaderPerObjectArgs(
+        object_names=["fabric"],
+        object_init_sampler=PredefinedObjectInitializer(),
+    ),
     eval_dataloader_class=ED.InformedEnvironmentDataLoader,
-    eval_dataloader_args=get_voltage_touch_dataloader_args(),
+    eval_dataloader_args=EnvironmentDataloaderPerObjectArgs(
+        object_names=["fabric"],
+        object_init_sampler=PredefinedObjectInitializer(),
+    ),
 )
 
 experiments = MyExperiments(

@@ -18,7 +18,7 @@ class VoltageTouchEnvironment(EmbodiedEnvironment):
         self.touch_frequency = 2.0 # Hz of touch events
         # Just for compatibility with the dataloader system
         self._agents = [type("FakeAgent", (object,), {"action_space_type": "surface_agent"})()]
-        self.fabric_num = 0 # fabric to get data from
+        self.fabric_num = -1 # fabric to get data from - first run increments this pre-data access so start at -1
 
         if isinstance(dataset, dict):
             self.train_data = dataset['train_data'] if 'train_data' in dataset else None
@@ -34,21 +34,15 @@ class VoltageTouchEnvironment(EmbodiedEnvironment):
         # For a simple voltage touch environment, we might not need complex actions
         # You can customize this based on what actions you want to support
         return VoltageTouchActionSpace(["no_action"])
-
-    def add_object(self, name, position=(0.0, 0.0, 0.0), rotation=(1.0, 0.0, 0.0, 0.0), 
-                   scale=(1.0, 1.0, 1.0), semantic_id=None, enable_physics=False, 
-                   object_to_avoid=False, primary_target_object=None):
-        """Used to update environment with next object - used here to increment id of voltage data read"""
-        # TODO - perhaps make a new dataloader environment which is operating on multiple objects 
-        # per scene - currently not implemented in Monty but for now this wil do.
-        self.fabric_num += 1
-        
-        # Return None for now, but could return with more information as needed
-        return None
+    
+    def add_object(self, name, position = ..., rotation = ..., scale = ..., semantic_id = None, enable_physics = False, object_to_avoid=False, primary_target_object=None):
+        pass
 
     def remove_all_objects(self):
-        """Used to transition betwen one fabric to another"""
         pass
+
+    def pre_epoch(self):
+        self.fabric_num += 1
 
     def close(self):
         """Close the environment and release resources."""
