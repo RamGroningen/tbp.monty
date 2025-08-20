@@ -67,7 +67,7 @@ class VoltageTouchEnvironment(EmbodiedEnvironment):
             "agent_id_0": {
                 "finger": {
                     "voltage" : voltage,
-                    "fabric_id" : self.train_targets[self.fabric_num],
+                    "fabric_id" : self.train_targets[self.fabric_num].item(),
                     "timestamp" : self.current_time,
                     "location" : self.sensor_location,
                 }
