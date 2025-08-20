@@ -1,6 +1,7 @@
 import numpy as np
 from tbp.monty.frameworks.environments.embodied_environment import EmbodiedEnvironment, ActionSpace
 from tbp.monty.frameworks.actions.actions import Action
+from scipy.spatial.transform import Rotation
 
 '''Environment Classes'''
 class VoltageTouchActionSpace(tuple, ActionSpace):
@@ -25,6 +26,9 @@ class VoltageTouchEnvironment(EmbodiedEnvironment):
             self.train_targets = dataset['train_targets'] if 'train_targets' in dataset else None
             self.test_data = dataset['test_data'] if 'test_data' in dataset else None
             self.test_targets = dataset['test_targets'] if 'test_targets' in dataset else None
+
+        self.fabric_rotation = Rotation.from_euler('xyz', [0, 0, 0], degrees=True)
+        self.rotation_step = 360/1000
 
         # TODO - if incorrect dataset type fails silently - can throw an error to help later
 
@@ -56,13 +60,14 @@ class VoltageTouchEnvironment(EmbodiedEnvironment):
         # This creates a relatistic pattern of touch events
         idx = int(self.current_time / 0.001)
         voltage = self._generate_voltage_data(idx)
+        self.fabric_rotation = self.fabric_rotation * Rotation.from_euler('z', self.rotation_step, degrees=True)
 
         # Create observation with voltage data
         obs = {
             "agent_id_0": {
                 "finger": {
                     "voltage" : voltage,
-                    "fabric_id" : self.train_data[self.fabric_num],
+                    "fabric_id" : self.train_targets[self.fabric_num],
                     "timestamp" : self.current_time,
                     "location" : self.sensor_location,
                 }
